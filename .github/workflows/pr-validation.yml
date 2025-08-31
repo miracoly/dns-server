@@ -1,0 +1,38 @@
+name: Pull Request Validation
+
+on:
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  nix:
+    name: Validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Show nix version
+        run: nix --version
+
+      - name: Check flake
+        run: nix flake check --all-systems
+
+      - name: GitLint
+        run: nix run .#gitlint
+
+      - name: Check Formatting
+        run: nix run .#format-check
+
+      - name: Build
+        run: |
+          nix build
+          file ./result/bin/stga
