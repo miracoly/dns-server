@@ -1,6 +1,9 @@
+#define _POSIX_C_SOURCE 200809L
+
 #include <arpa/inet.h>
 #include <log.h>
 #include <netinet/in.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdnoreturn.h>
@@ -11,7 +14,30 @@
 #define PORT 2053
 #define BUF_SIZE 512
 
+static volatile sig_atomic_t stop = 0;
+
+static void handleSignal(int sig) {
+  (void)sig;
+  stop = 1;
+}
+
+static void registerSignalHandlers(void) {
+  struct sigaction sa = {0};
+  sa.sa_handler = handleSignal;
+  sigemptyset(&sa.sa_mask);
+  if (sigaction(SIGINT, &sa, NULL) != 0) {
+    log_fatal("could not register signal handler");
+    _exit(EXIT_FAILURE);
+  }
+  if (sigaction(SIGTERM, &sa, NULL) != 0) {
+    log_fatal("could not register signal handler");
+    _exit(EXIT_FAILURE);
+  }
+}
+
 int main(void) {
+  registerSignalHandlers();
+
   int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
   if (sockfd < 0) {
     log_fatal("could not create socket");
@@ -31,7 +57,7 @@ int main(void) {
 
   log_info("starting dns server, listening on port 2053");
 
-  while (true) {
+  while (!stop) {
     struct sockaddr_in clientaddr;
     socklen_t clientlen = sizeof(clientaddr);
     char buf[BUF_SIZE + 1];
@@ -39,6 +65,7 @@ int main(void) {
 
     ssize_t n_read =
         recvfrom(sockfd, buf, BUF_SIZE, 0, pclientaddr, &clientlen);
+    if (stop) break;
     if (n_read < 0) {
       log_error("could not read from socket");
       continue;
@@ -59,6 +86,7 @@ int main(void) {
     }
   }
 
+  if (stop) log_warn("received interrupt, shutting down");
   close(sockfd);
   return 0;
 }
