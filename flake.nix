@@ -2,11 +2,18 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
     flake-utils.url = "github:numtide/flake-utils";
+
+    logc-src = {
+      url = "github:rxi/log.c";
+      flake = false;
+    };
   };
 
   outputs = {
     nixpkgs,
     flake-utils,
+    logc-src,
+    self,
     ...
   }:
     flake-utils.lib.eachDefaultSystem (system: let
@@ -22,6 +29,7 @@
           criterion
           gcc
           gnumake
+          self.packages.${system}.logc
           shfmt
         ];
         shellHook = ''
@@ -99,10 +107,39 @@
           '';
         };
 
+        logc = pkgs.stdenv.mkDerivation {
+          pname = "log-c";
+          version = "unstable-2020-06-20";
+
+          src = logc-src;
+
+          dontConfigure = true;
+          buildPhase = ''
+            CFLAGS=""
+            $CC -O2 -fPIC \
+              -DLOG_USE_COLOR \
+              -c src/log.c -o log.o
+
+            ar rcs liblog.a log.o
+          '';
+          installPhase = ''
+            mkdir -p $out/include $out/lib
+            cp src/log.h $out/include/
+            cp liblog.a $out/lib/
+          '';
+
+          meta = with pkgs.lib; {
+            description = "A simple logging library implemented in C99";
+            homepage = "https://github.com/rxi/log.c";
+            license = licenses.mit;
+            platforms = platforms.all;
+          };
+        };
+
         mydns = pkgs.stdenv.mkDerivation {
           name = "mydns";
           src = ./.;
-          buildInputs = [pkgs.gcc pkgs.gnumake];
+          buildInputs = with pkgs; [gcc gnumake logc];
           nativeBuildInputs = [];
           buildPhase = ''
             make

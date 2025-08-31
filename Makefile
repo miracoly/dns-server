@@ -1,4 +1,4 @@
-LIBS = 
+LIBS = -llog
 
 ###
 CFLAGS  = -std=c11
@@ -16,6 +16,10 @@ ASANFLAGS += -fno-omit-frame-pointer
 
 .PHONY: all
 all: main.out
+
+.PHONY: run
+run: main.out
+	@./main.out
 
 main.out: main.c
 	@$(CC) $(CFLAGS) -o main.out $^ $(LIBS)

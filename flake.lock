@@ -18,6 +18,22 @@
         "type": "github"
       }
     },
+    "logc-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1592653367,
+        "narHash": "sha256-vQnNoLNF6MgkkRxWCe/aC1dOq+wW1qVPEs+6cxVxwKo=",
+        "owner": "rxi",
+        "repo": "log.c",
+        "rev": "f9ea34994bd58ed342d2245cd4110bb5c6790153",
+        "type": "github"
+      },
+      "original": {
+        "owner": "rxi",
+        "repo": "log.c",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1756469547,
@@ -37,6 +53,7 @@
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
+        "logc-src": "logc-src",
         "nixpkgs": "nixpkgs"
       }
     },
